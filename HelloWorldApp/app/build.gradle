@@ -15,10 +15,91 @@ android {
             minifyEnabled false
         }
     }
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
+    configurations {
+        extractHeaders
+        extractJNI
+        extractForNativeBuild
+    }
+    /**
+     * Without the packaging options, it will result in the following build error:
+     *
+     * * What went wrong:
+     * Execution failed for task ':app:mergeDebugNativeLibs'.
+     * > A failure occurred while executing com.android.build.gradle.internal.tasks.Workers$ActionFacade
+     *    > More than one file was found with OS independent path 'lib/x86/libfbjni.so'
+     */
+    packagingOptions {
+        pickFirst '**/*.so'
+    }
 }
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'org.pytorch:pytorch_android_lite:1.9.0'
-    implementation 'org.pytorch:pytorch_android_torchvision:1.9.0'
+    implementation 'org.pytorch:pytorch_android_lite:1.10.0'
+    implementation 'org.pytorch:pytorch_android_torchvision_lite:1.10.0'
+    implementation 'org.pytorch:torchvision_ops:0.11.1'
+
+    //noinspection GradleDynamicVersion
+    extractHeaders("com.facebook.fbjni:fbjni:+:headers")
+    //noinspection GradleDynamicVersion
+    extractJNI("com.facebook.fbjni:fbjni:+")
+
+    extractForNativeBuild('org.pytorch:pytorch_android_lite:1.10.0')
+}
+
+// fbjni
+// https://github.com/facebookincubator/fbjni/blob/master/docs/android_setup.md
+
+task extractAARHeaders {
+    doLast {
+        configurations.extractHeaders.files.each {
+            def file = it.absoluteFile
+            copy {
+                from zipTree(file)
+                into "$buildDir/$file.name"
+                include "**/*.h"
+            }
+        }
+    }
+}
+
+task extractJNIFiles {
+    doLast {
+        configurations.extractJNI.files.each {
+            def file = it.absoluteFile
+
+            copy {
+                from zipTree(file)
+                into "$buildDir/$file.name"
+                include "jni/**/*"
+            }
+        }
+    }
+}
+
+task extractAARForNativeBuild {
+    doLast {
+        configurations.extractForNativeBuild.files.each {
+            def file = it.absoluteFile
+            copy {
+                from zipTree(file)
+                into "$buildDir/$file.name"
+                include "headers/**"
+                include "jni/**"
+            }
+        }
+    }
+}
+
+tasks.whenTaskAdded { task ->
+    if (task.name.contains('externalNativeBuild')) {
+        task.dependsOn(extractAARHeaders)
+        task.dependsOn(extractJNIFiles)
+        task.dependsOn(extractAARForNativeBuild)
+    }
 }
