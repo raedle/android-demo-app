@@ -68,7 +68,7 @@ adb logcat --buffer=crash
 Then run the `./gradlew installDebug` command again.
 
 
-## 6. Get Crash Report
+## 6. When it does not crash anymore
 
 If the model works with PyTorch Mobile, the app should not crash. Additionally, the `module_.forward(inputs)` in `src/main/cpp/OnLoad.cpp` should should return a sensible result.
 
