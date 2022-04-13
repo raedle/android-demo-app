@@ -13,16 +13,17 @@ import java.io.OutputStream;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-  
+
   private static String TAG = "PytorchHelloWorld";
-  
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
     try {
-      final String filePath = assetFilePath(this, "yolov5s_scriptmodule.ptl");
+      // final String filePath = assetFilePath(this, "yolov5s_scriptmodule.ptl");
+      final String filePath = assetFilePath(this, "mobilenet_v3_small.ptl");
       YOLOv5 yolo = new YOLOv5();
       yolo.loadAndForward(filePath);
     } catch (IOException e) {
